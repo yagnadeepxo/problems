@@ -1,36 +1,55 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## Overview
 
-## Getting Started
+This app hits four Hacker News RSS feeds, stores the combined payload in an OS-level temp file, and runs two Gemini passes:
 
-First, run the development server:
+1. **First round (Gemini 2.5 Flash)** – filters for real workflow/problem pain.
+2. **Second round (Gemini 2.5 Pro)** – scores venture-scale potential across B2B SaaS & consumer dimensions.
+
+A single API endpoint (`/api/hn`) orchestrates the entire pipeline. A Vercel cron pings `/api/hn?refresh=true` every day at **00:00 UTC**. The final evaluation results are stored in Supabase, and the homepage displays evaluations grouped by day. Click on any day to view the full report.
+
+## Local Development
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Visit [http://localhost:3000](http://localhost:3000) to see the dashboard. Use the “Force refresh now” button or hit `/api/hn?refresh=true` to run the full pipeline manually.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Gemini Configuration
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Set the Gemini API key in your environment before running the app:
 
-## Learn More
+```bash
+export GEMINI_API_KEY=your-key-here
+```
 
-To learn more about Next.js, take a look at the following resources:
+If `GEMINI_API_KEY` is not defined, the app falls back to the key provided in the specification, but you should prefer a private environment variable for production use.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Supabase Configuration
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Set your Supabase credentials in your environment:
 
-## Deploy on Vercel
+```bash
+export NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
+export NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The app stores final evaluation results in the `hn_evaluations` table. Make sure you've created the table using the SQL provided in the setup instructions.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Cron Scheduling
+
+`vercel.json` contains a single cron definition:
+
+```json
+{
+  "crons": [
+    {
+      "path": "/api/hn?refresh=true",
+      "schedule": "0 0 * * *"
+    }
+  ]
+}
+```
+
+Deploying to Vercel enables the automated daily refresh. For other hosts, schedule an equivalent task that hits the same endpoint once per day at midnight UTC.
