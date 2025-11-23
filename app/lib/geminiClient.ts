@@ -155,7 +155,7 @@ export type SecondRoundResult = GeminiResponse & {
 };
 
 function getGeminiApiKey() {
-  const apiKey = process.env.GEMINI_API_KEY ?? 'AIzaSyDPtQVbJLI9FBzOqnMM49NtqzV1NJxoD_k';
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error('Missing GEMINI_API_KEY environment variable');
   }
